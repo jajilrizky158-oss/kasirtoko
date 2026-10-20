@@ -1,0 +1,6 @@
+/* Menghilangkan scrollbar pada body utama untuk mencegah lag */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}

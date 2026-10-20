@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Kasir Toko Sparepart</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.3s; }
+    
+    button, select, input, .group { outline: none; }
+    button:active, .group:active { 
+      transform: translateY(1px);
+      transition: all 0.05s ease-in-out; 
+    }
+
+    .bg-garage { background-color: #f4f4f5; background-image: radial-gradient(#d4d4d8 1px, transparent 1px); background-size: 20px 20px; }
+    .active-tab { background-color: #18181b !important; color: white !important; box-shadow: inset 4px 0 0 0 #dc2626 !important; border-radius: 0 12px 12px 0 !important; }
+    html.dark .active-tab { background-color: #27272a !important; }
+    .active-tab i { color: #ef4444 !important; }
+    
+    html.dark .bg-garage { background-color: #09090b; background-image: radial-gradient(#27272a 1px, transparent 1px); }
+    html.dark .bg-white { background-color: #18181b !important; border-color: #27272a !important; }
+    html.dark .bg-zinc-50 { background-color: #09090b !important; border-color: #27272a !important; }
+    html.dark .bg-zinc-100 { background-color: #27272a !important; color: #e4e4e7 !important; }
+    html.dark .border-zinc-100, html.dark .border-zinc-200 { border-color: #27272a !important; }
+    html.dark .text-zinc-900, html.dark .text-zinc-800 { color: #f4f4f5 !important; }
+    html.dark .text-zinc-700, html.dark .text-zinc-600 { color: #d4d4d8 !important; }
+    html.dark .text-zinc-500, html.dark .text-zinc-400 { color: #a1a1aa !important; }
+    html.dark input, html.dark select, html.dark textarea { background-color: #09090b !important; color: #f4f4f5 !important; border-color: #27272a !important; }
+    html.dark tr.hover\:bg-zinc-50:hover { background-color: #27272a !important; }
+    html.dark .shadow-sm, html.dark .shadow-md, html.dark .shadow-xl { box-shadow: none !important; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; color: black !important; background: white !important; }
+      #print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+      .no-print { display: none !important; }
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    html.dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+    html.dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+  </style>
+</head>
+<body class="text-zinc-800 bg-garage">
+
+<div id="main-app" class="flex min-h-screen no-print">
+  
+  <aside class="w-64 bg-zinc-950 shadow-2xl border-r border-zinc-900 flex flex-col justify-between z-20 h-screen sticky top-0">
+    <div>
+      <div class="p-6 pb-2">
+        <div class="flex items-center gap-3 mb-8 px-1">
+          <div class="w-12 h-12 bg-zinc-900 flex items-center justify-center text-red-600 font-bold text-xl overflow-hidden relative shrink-0 border border-zinc-800" style="transform: skewX(-10deg);">
+            <div style="transform: skewX(10deg);" class="w-full h-full flex items-center justify-center">
+              <i id="uiProfileIcon" class="fa-solid fa-wrench absolute z-0"></i>
+              <img id="uiProfilePic" src="" class="hidden w-full h-full object-cover relative z-10">
+            </div>
+          </div>
+          <div>
+            <h1 id="uiShopName" class="font-extrabold text-white leading-tight uppercase tracking-wide text-sm">Toko Sparepart</h1>
+            <p class="text-[9px] text-emerald-500 font-bold tracking-widest uppercase"><i class="fa-solid fa-circle text-[6px] mr-1 animate-pulse"></i>System Ready</p>
+          </div>
+        </div>
+      </div>
+
+      <nav class="space-y-2 px-2 mt-4">
+        <button onclick="switchTab('beranda')" id="tab-beranda" class="group w-full flex items-center gap-4 px-4 py-3.5 text-sm font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition rounded-xl active-tab">
+          <i class="fa-solid fa-gauge-high w-5 text-center text-zinc-500 group-hover:text-red-500 transition-colors"></i> Pusat Kendali
+        </button>
+        <button onclick="switchTab('kasir')" id="tab-kasir" class="group w-full flex items-center gap-4 px-4 py-3.5 text-sm font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition rounded-xl">
+          <i class="fa-solid fa-cash-register w-5 text-center text-zinc-500 group-hover:text-red-500 transition-colors"></i> Mesin Kasir
+        </button>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="flex-1 p-8 overflow-y-auto relative h-screen">
+    
+    <div class="flex justify-between items-center mb-6 border-b border-zinc-300 dark:border-zinc-700 pb-4">
+      <div>
+        <h2 id="uiGreeting" class="text-2xl font-extrabold text-zinc-900 uppercase tracking-wide">DASHBOARD</h2>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="togglePrivacy()" id="btnPrivacy" class="bg-zinc-800 hover:bg-zinc-900 text-white px-4 py-2.5 rounded-md text-xs font-bold transition flex items-center gap-2 uppercase tracking-wider shadow-sm cursor-pointer">
+          <i id="iconPrivacy" class="fa-solid fa-eye-slash"></i> <span id="textPrivacy">Hide Rp</span>
+        </button>
+        <label class="cursor-pointer bg-zinc-800 hover:bg-zinc-900 text-white px-4 py-2.5 rounded-md text-xs font-bold transition flex items-center gap-2 uppercase tracking-wider shadow-sm">
+          <i class="fa-solid fa-file-csv"></i> Upload CSV
+          <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="importCSV(event)">
+        </label>
+      </div>
+    </div>
+
+    <!-- BERANDA -->
+    <section id="sec-beranda" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <div class="bg-red-600 text-white p-6 rounded-lg shadow-md flex flex-col justify-center border-b-4 border-red-800 relative overflow-hidden">
+          <i class="fa-solid fa-cash-register absolute -right-4 -bottom-4 text-7xl text-red-500 opacity-30 z-0"></i>
+          <div class="relative z-10"><p class="text-[10px] font-bold uppercase tracking-widest text-red-200">Omzet Lunas (Hari Ini)</p><h3 id="stat-omzet" class="text-3xl font-extrabold mt-1 tracking-tight">Rp 0</h3></div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 flex flex-col justify-center border-b-4 border-emerald-500">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Laba Bersih Lunas (Hari Ini)</p><h3 id="stat-laba" class="text-3xl font-extrabold text-emerald-600 mt-1 tracking-tight">Rp 0</h3>
+        </div>
+        <div class="bg-orange-50 p-6 rounded-lg shadow-sm border border-orange-200 flex flex-col justify-center border-b-4 border-orange-500 relative overflow-hidden">
+          <i class="fa-solid fa-book-open absolute -right-2 -bottom-2 text-6xl text-orange-200 opacity-60 z-0"></i>
+          <div class="relative z-10"><p class="text-[10px] font-bold uppercase tracking-widest text-orange-600">Total Buku Kasbon</p><h3 id="stat-kasbon" class="text-3xl font-extrabold text-orange-600 mt-1 tracking-tight">Rp 0</h3></div>
+        </div>
+      </div>
+
+      <h3 class="font-extrabold text-lg mt-10 mb-4 uppercase tracking-wide border-l-4 border-red-600 pl-3"><i class="fa-solid fa-wrench text-red-600 mr-2"></i> Operasional Gudang</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 cursor-pointer">
+        <button onclick="switchTab('stok')" class="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white p-6 rounded-xl border-b-4 border-zinc-400 dark:border-zinc-700 shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center gap-3 transition group hover:bg-zinc-50 dark:hover:bg-zinc-800"><i class="fa-solid fa-boxes-stacked text-4xl text-zinc-500 group-hover:scale-110 group-hover:text-red-500 transition"></i><span class="font-extrabold text-xs uppercase tracking-widest text-center mt-2">Cari Stok</span></button>
+        <button onclick="switchTab('belanja')" class="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white p-6 rounded-xl border-b-4 border-zinc-400 dark:border-zinc-700 shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center gap-3 transition group hover:bg-zinc-50 dark:hover:bg-zinc-800"><i class="fa-solid fa-truck-fast text-4xl text-zinc-500 group-hover:scale-110 group-hover:text-red-500 transition"></i><span class="font-extrabold text-xs uppercase tracking-widest text-center mt-2">Input Kulakan</span></button>
+        <button onclick="switchTab('opname')" class="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white p-6 rounded-xl border-b-4 border-zinc-400 dark:border-zinc-700 shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center gap-3 transition group hover:bg-zinc-50 dark:hover:bg-zinc-800"><i class="fa-solid fa-clipboard-check text-4xl text-zinc-500 group-hover:scale-110 group-hover:text-red-500 transition"></i><span class="font-extrabold text-xs uppercase tracking-widest text-center mt-2">Stock Opname</span></button>
+      </div>
+      
+      <h3 class="font-extrabold text-lg mt-10 mb-4 uppercase tracking-wide border-l-4 border-blue-500 pl-3"><i class="fa-solid fa-chart-pie text-blue-500 mr-2"></i> Laporan & Keuangan</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 cursor-pointer">
+        <button onclick="switchTab('rekap')" class="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center gap-4 transition hover:bg-zinc-50 dark:hover:bg-zinc-800 group"><div class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-100 transition shrink-0"><i class="fa-solid fa-book-bookmark text-xl"></i></div><div class="text-left"><span class="block font-bold text-xs uppercase tracking-widest">Tutup Buku</span><span class="text-[10px] text-zinc-500">Rekap Kasir</span></div></button>
+        <button onclick="switchTab('riwayat')" class="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center gap-4 transition hover:bg-zinc-50 dark:hover:bg-zinc-800 group"><div class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-orange-500 group-hover:bg-orange-100 transition shrink-0"><i class="fa-solid fa-list-check text-xl"></i></div><div class="text-left"><span class="block font-bold text-xs uppercase tracking-widest">Log Jual</span><span class="text-[10px] text-zinc-500">Nota Keluar</span></div></button>
+        <button onclick="switchTab('riwayat-belanja')" class="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center gap-4 transition hover:bg-zinc-50 dark:hover:bg-zinc-800 group"><div class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-blue-500 group-hover:bg-blue-100 transition shrink-0"><i class="fa-solid fa-box-open text-xl"></i></div><div class="text-left"><span class="block font-bold text-xs uppercase tracking-widest">Log Belanja</span><span class="text-[10px] text-zinc-500">Pengeluaran</span></div></button>
+        <button onclick="switchTab('statistik')" class="bg-white dark:bg-zinc-900 text-zinc-800 dark:text-white p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center gap-4 transition hover:bg-zinc-50 dark:hover:bg-zinc-800 group"><div class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-rose-500 group-hover:bg-rose-100 transition shrink-0"><i class="fa-solid fa-chart-line text-xl"></i></div><div class="text-left"><span class="block font-bold text-xs uppercase tracking-widest">Grafik</span><span class="text-[10px] text-zinc-500">Tren Laba</span></div></button>
+      </div>
+
+      <h3 class="font-extrabold text-lg mt-10 mb-4 uppercase tracking-wide border-l-4 border-zinc-500 pl-3"><i class="fa-solid fa-gear text-zinc-500 mr-2"></i> Pengaturan Admin</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pb-12 cursor-pointer">
+        <button onclick="bukaModalPengaturan()" class="bg-zinc-900 hover:bg-black text-zinc-300 hover:text-white p-5 rounded-xl border border-zinc-800 shadow-sm flex items-center gap-4 transition group"><div class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-red-500 transition shrink-0"><i class="fa-solid fa-store text-lg"></i></div><div class="text-left"><span class="block font-bold text-xs uppercase tracking-widest">Profil Toko</span></div></button>
+        <button onclick="exportCSV()" class="bg-zinc-900 hover:bg-black text-zinc-300 hover:text-white p-5 rounded-xl border border-zinc-800 shadow-sm flex items-center gap-4 transition group"><div class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-red-500 transition shrink-0"><i class="fa-solid fa-database text-lg"></i></div><div class="text-left"><span class="block font-bold text-xs uppercase tracking-widest">Backup CSV</span></div></button>
+        <button onclick="toggleTema()" class="bg-zinc-900 hover:bg-black text-zinc-300 hover:text-white p-5 rounded-xl border border-zinc-800 shadow-sm flex items-center gap-4 transition group"><div class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-red-500 transition shrink-0"><i id="iconTema" class="fa-solid fa-moon text-lg"></i></div><div class="text-left"><span class="block font-bold text-xs uppercase tracking-widest">Ganti Tema</span></div></button>
+      </div>
+    </section>
+
+    <!-- TAB: GRAFIK PENJUALAN -->
+    <section id="sec-statistik" class="hidden space-y-6 min-w-[600px]">
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 border-t-4 border-t-rose-500">
+        <div class="flex justify-between items-center mb-6 gap-4">
+          <div><h3 class="font-extrabold text-lg uppercase tracking-wide"><i class="fa-solid fa-chart-line text-rose-500 mr-2"></i> Grafik Penjualan (7 Hari)</h3></div>
+        </div>
+        <div class="w-full overflow-hidden bg-zinc-50 dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 p-4"><canvas id="salesChart" style="width: 100%; height: 380px;"></canvas></div>
+      </div>
+    </section>
+
+    <!-- TAB: STOK BARANG -->
+    <section id="sec-stok" class="hidden space-y-6 min-w-[700px]">
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 border-t-4 border-t-zinc-500">
+        <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+          <div><h3 class="font-bold text-lg uppercase tracking-wide"><i class="fa-solid fa-box text-zinc-500 mr-2"></i> Database Stok Gudang</h3></div>
+          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div class="relative w-72"><i class="fa-solid fa-search absolute left-4 top-3.5 text-zinc-400 text-sm"></i><input type="text" id="searchInput" oninput="cariBarangDebounce()" placeholder="Ketik Part No, Nama..." class="w-full pl-10 pr-4 py-2.5 bg-zinc-50 border border-zinc-300 rounded-md text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 font-medium transition-all"></div>
+            <select id="filterTempat" onchange="renderInventory()" class="bg-zinc-50 border border-zinc-300 rounded-md px-3 py-2.5 text-sm font-bold uppercase text-zinc-700 focus:outline-none focus:border-red-500"><option value="ALL">Semua Area</option><option value="MUMU">MUMU</option><option value="IWAN">IWAN</option><option value="ONLINE">ONLINE</option></select>
+          </div>
+        </div>
+        <div class="overflow-x-auto border border-zinc-200 rounded-md custom-scrollbar">
+          <table class="w-full text-left border-collapse min-w-[800px]">
+            <thead class="sticky top-0 z-10 bg-zinc-800"><tr class="text-[10px] uppercase text-zinc-300 font-extrabold tracking-wider"><th class="py-3 px-4">KODE & NAMA BARANG</th><th class="py-3 px-3">MERK</th><th class="py-3 px-3">LOKASI</th><th class="py-3 px-3 text-center">STOK</th><th class="py-3 px-3 text-right">MODAL</th><th class="py-3 px-3 text-right text-red-400">GROSIR</th><th class="py-3 px-3 text-right text-emerald-400">ECERAN</th><th class="py-3 px-3 text-center">AKSI</th></tr></thead>
+            <tbody id="inventoryBody" class="divide-y divide-zinc-100 text-sm font-medium bg-white dark:bg-zinc-950"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: KASIR & NOTA -->
+    <section id="sec-kasir" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-[700px]">
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 border-t-4 border-t-zinc-800">
+          <h3 class="font-extrabold text-lg mb-4 uppercase tracking-wide"><i class="fa-solid fa-cash-register text-red-600 mr-2"></i> Console Kasir</h3>
+          <div class="grid grid-cols-3 gap-4 mb-4 bg-zinc-50 p-4 rounded-md border border-zinc-200">
+            <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Tipe Harga</label><select id="notaTipeHarga" class="w-full mt-1 p-2.5 bg-white border border-zinc-300 rounded text-sm font-bold text-zinc-800 outline-none focus:border-red-500"><option value="jual" selected>GROSIR (Toko)</option><option value="bengkel">ECERAN (Umum)</option></select></div>
+            <div><label class="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Pembayaran</label><select id="notaStatusBayar" class="w-full mt-1 p-2.5 bg-orange-50 border border-orange-200 rounded text-sm font-bold text-orange-700 outline-none focus:border-orange-500"><option value="Lunas">✅ LUNAS</option><option value="Kasbon">❌ KASBON</option></select></div>
+            <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Pelanggan</label><input type="text" id="notaPelanggan" placeholder="Nama / Motor" class="w-full mt-1 p-2.5 bg-white border border-zinc-300 rounded text-sm font-bold outline-none focus:border-red-500"></div>
+          </div>
+          <div class="bg-zinc-900 p-4 rounded-md shadow-inner mb-6 border border-zinc-800">
+            <label class="text-xs font-bold text-red-500 block mb-2 uppercase tracking-widest"><i class="fa-solid fa-barcode mr-1"></i> Scan / Ketik Kode Barang:</label>
+            <input type="text" id="filterKasirBarang" oninput="cariKasirDebounce()" placeholder="Ketik Kode Part atau Nama..." class="w-full p-3 bg-zinc-950 border border-zinc-700 text-white rounded text-sm font-mono focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all">
+            <div class="flex gap-3 mt-3 items-end">
+              <div class="flex-1"><select id="pilihBarangStok" class="w-full p-3 bg-zinc-800 border border-zinc-700 text-zinc-200 rounded text-sm font-medium outline-none focus:border-red-500 custom-scrollbar"></select></div>
+              <div class="flex gap-2"><input type="number" id="qtyStok" value="1" min="1" class="w-20 p-3 bg-zinc-800 border border-zinc-700 text-white rounded text-sm font-bold text-center outline-none focus:border-red-500"><button onclick="tambahKeKeranjangStok()" class="w-full bg-red-600 hover:bg-red-700 text-white p-3 rounded text-sm font-extrabold transition shadow-md uppercase tracking-wider cursor-pointer">ADD</button></div>
+            </div>
+          </div>
+          <div class="bg-zinc-50 p-4 rounded-md border border-zinc-200 border-l-4 border-l-zinc-400">
+            <p class="text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Input Manual (Jasa / Lainnya):</p>
+            <div class="flex gap-3">
+              <input type="text" id="manualNama" placeholder="Nama Jasa / Part" class="flex-1 p-2.5 bg-white border border-zinc-300 rounded text-sm outline-none focus:border-red-500">
+              <input type="number" id="manualHarga" placeholder="Tarif (Rp)" class="w-40 p-2.5 bg-white border border-zinc-300 rounded text-sm outline-none focus:border-red-500">
+              <button onclick="tambahKeKeranjangManual()" class="bg-zinc-800 hover:bg-zinc-900 text-white px-6 py-2.5 rounded text-sm font-bold uppercase tracking-wider transition cursor-pointer">Input</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 flex flex-col justify-between border-t-4 border-t-red-600">
+        <div>
+          <div class="flex justify-between items-center mb-4"><h3 class="font-extrabold text-lg uppercase tracking-wide">Struk Belanja</h3><i class="fa-solid fa-receipt text-zinc-300 text-xl"></i></div>
+          <div id="keranjangList" class="space-y-2 max-h-80 overflow-y-auto text-sm pr-2 custom-scrollbar"></div>
+        </div>
+        <div class="border-t-2 border-dashed border-zinc-300 pt-4 mt-4 space-y-3">
+          <div class="flex justify-between items-center"><span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Total Tagihan</span><span id="keranjangTotal" class="text-2xl font-extrabold text-red-600">Rp 0</span></div>
+          <div class="grid grid-cols-2 gap-2 pt-2">
+            <button onclick="salinNotaWA()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 py-3 rounded font-bold text-xs transition flex items-center justify-center gap-1.5 uppercase tracking-wider cursor-pointer"><i class="fa-brands fa-whatsapp text-base"></i> WA</button>
+            <button onclick="cetakStrukNota()" class="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-300 py-3 rounded font-bold text-xs transition flex items-center justify-center gap-1.5 uppercase tracking-wider cursor-pointer"><i class="fa-solid fa-print"></i> Print</button>
+          </div>
+          <button onclick="prosesNotaSelesai()" class="w-full bg-zinc-900 hover:bg-zinc-800 text-white py-4 rounded font-extrabold text-sm shadow-md transition uppercase tracking-widest mt-2 flex justify-center items-center gap-2 cursor-pointer"><i class="fa-solid fa-flag-checkered"></i> Selesai</button>
+        </div>
+      </div>
+    </section>
+
+   <!-- TAB 4: INPUT BELANJA (DENGAN AUTO-FILL) -->
+    <section id="sec-belanja" class="hidden space-y-6 min-w-[700px]">
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 border-t-4 border-t-blue-500">
+        <h3 class="font-extrabold text-lg mb-1 uppercase tracking-wide"><i class="fa-solid fa-truck-ramp-box text-blue-500 mr-2"></i> Input Stok Datang</h3>
+        <p class="text-xs text-zinc-500 mb-4 font-medium">Cari barang yang sudah ada untuk isi otomatis, atau ketik langsung di form untuk barang baru.</p>
+
+        <!-- KOTAK PENCARIAN (DESAIN PERSIS SEPERTI KASIR) -->
+        <div class="bg-zinc-900 p-4 rounded-md shadow-inner mb-6 border border-zinc-800">
+          <label class="text-xs font-bold text-blue-500 block mb-2 uppercase tracking-widest"><i class="fa-solid fa-magnifying-glass mr-1"></i> Scan / Ketik Kode Barang Lama:</label>
+          <input type="text" id="cariBarangBelanja" oninput="cariBelanjaDebounce()" placeholder="Ketik Kode Part atau Nama..." class="w-full p-3 bg-zinc-950 border border-zinc-700 text-white rounded text-sm font-mono focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+          
+          <div class="flex gap-3 mt-3 items-end">
+            <div class="flex-1">
+              <select id="pilihBarangBelanja" class="w-full p-3 bg-zinc-800 border border-zinc-700 text-zinc-200 rounded text-sm font-medium outline-none focus:border-blue-500 custom-scrollbar">
+                <option value="">-- Ketik pencarian di atas, lalu pilih barang di sini --</option>
+              </select>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="autoFillBelanja()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded text-sm font-extrabold transition shadow-md uppercase tracking-wider cursor-pointer">PILIH</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATUS INDIKATOR BARANG (BARU/LAMA/NAIK) -->
+        <div id="statusBarangBaru" class="hidden mb-4 p-4 rounded bg-purple-50 border border-purple-200 flex items-start gap-3 shadow-inner">
+          <div class="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center shrink-0"><i class="fa-solid fa-sparkles text-purple-600"></i></div>
+          <div><b class="font-extrabold uppercase tracking-widest text-[11px] text-purple-700">✨ Barang Baru</b><br><span class="text-xs font-medium text-purple-800">Part ini belum ada di sistem. Akan didaftarkan otomatis sebagai produk baru.</span></div>
+        </div>
+        <div id="statusBarangLama" class="hidden mb-4 p-4 rounded bg-emerald-50 border border-emerald-200 flex items-start gap-3 shadow-inner">
+          <div class="w-8 h-8 rounded-full bg-emerald-200 flex items-center justify-center shrink-0"><i class="fa-solid fa-check text-emerald-600"></i></div>
+          <div><b class="font-extrabold uppercase tracking-widest text-[11px] text-emerald-700">✅ Barang Ditemukan</b><br><span id="textBarangLama" class="text-xs font-medium text-emerald-800">Stok akan ditambahkan ke produk yang sudah ada.</span></div>
+        </div>
+        <div id="alertHargaNaik" class="hidden mb-4 p-4 rounded bg-orange-50 border border-orange-300 text-orange-900 text-sm flex items-start gap-3 shadow-inner"><i class="fa-solid fa-triangle-exclamation text-orange-600 text-xl mt-0.5 animate-pulse"></i><div id="alertHargaText" class="font-medium"></div></div>
+
+        <!-- FORM INPUT UTAMA -->
+        <div class="grid grid-cols-4 gap-4 bg-zinc-50 p-5 rounded-md border border-zinc-200 mt-2">
+          <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">KODE PART</label><input type="text" id="belKode" oninput="cekHargaLama()" placeholder="Misal: KFV-123" class="w-full mt-1 p-2.5 bg-white border border-zinc-300 rounded text-sm font-mono uppercase focus:border-red-500 outline-none"></div>
+          <div class="col-span-2"><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">NAMA BARANG</label><input type="text" id="belNama" oninput="cekHargaLama()" placeholder="Contoh: BOLHAM STOP SMASH" class="w-full mt-1 p-2.5 bg-white border border-zinc-300 rounded text-sm uppercase focus:border-red-500 outline-none"></div>
+          <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">MERK</label><input type="text" id="belMerk" oninput="cekHargaLama()" placeholder="Contoh: AHM / SGP" class="w-full mt-1 p-2.5 bg-white border border-zinc-300 rounded text-sm uppercase focus:border-red-500 outline-none"></div>
+          <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">LOKASI</label><select id="belTempat" class="w-full mt-1 p-2.5 bg-white border border-zinc-300 rounded text-sm font-bold outline-none focus:border-red-500"><option value="MUMU">MUMU</option><option value="IWAN">IWAN</option><option value="ONLINE">ONLINE</option></select></div>
+          <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">QTY MASUK</label><input type="number" id="belStok" value="10" class="w-full mt-1 p-2.5 bg-white border-2 border-zinc-300 rounded text-sm font-bold text-center outline-none focus:border-red-500"></div>
+          <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">MODAL (Rp)</label><input type="number" id="belModal" oninput="cekHargaLama()" placeholder="11050" class="w-full mt-1 p-2.5 bg-white border border-zinc-300 rounded text-sm font-bold outline-none focus:border-red-500"></div>
+          <div></div> 
+          <div><label class="text-[10px] font-bold text-red-600 uppercase tracking-widest">GROSIR (Rp)</label><input type="number" id="belJual" placeholder="17000" class="w-full mt-1 p-2.5 bg-white border border-red-200 rounded text-sm font-bold outline-none focus:border-red-500"></div>
+          <div><label class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">ECERAN (Rp)</label><input type="number" id="belBengkel" placeholder="25000" class="w-full mt-1 p-2.5 bg-white border border-emerald-200 rounded text-sm font-bold outline-none focus:border-emerald-500"></div>
+          <div class="col-span-2"><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">INFO MOTOR</label><input type="text" id="belMotor" placeholder="Contoh: Beat, Vario, Scoopy" class="w-full mt-1 p-2.5 bg-white border border-zinc-300 rounded text-sm outline-none focus:border-red-500"></div>
+        </div>
+        <div class="mt-5 flex justify-end"><button onclick="simpanBelanjaStok()" class="bg-zinc-900 hover:bg-black text-white px-8 py-3.5 rounded font-extrabold text-sm shadow-md uppercase tracking-wider flex justify-center items-center gap-2 transition cursor-pointer"><i class="fa-solid fa-download"></i> Simpan Gudang</button></div>
+      </div>
+    </section>
+
+    <!-- TAB 5: RIWAYAT BELANJA -->
+    <section id="sec-riwayat-belanja" class="hidden space-y-6 min-w-[700px]">
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 border-t-4 border-t-blue-500">
+        <div class="flex justify-between items-center mb-4">
+          <div><h3 class="font-extrabold text-lg uppercase tracking-wide"><i class="fa-solid fa-box-open text-blue-600 mr-2"></i> Log Belanja</h3></div>
+          <div class="flex items-center gap-2">
+            <input type="date" id="filterTanggalBelanja" onchange="renderRiwayatBelanja()" class="bg-zinc-50 border border-zinc-300 text-zinc-800 px-3 py-2.5 rounded text-sm font-bold outline-none focus:border-blue-500 uppercase">
+            <button onclick="resetRiwayatBelanja()" class="bg-zinc-100 hover:bg-red-50 text-zinc-600 hover:text-red-600 border border-zinc-300 px-4 py-2.5 rounded text-xs font-bold transition uppercase tracking-wider cursor-pointer"><i class="fa-solid fa-trash-can mr-1"></i> Hapus</button>
+          </div>
+        </div>
+        <div id="summaryRiwayatBelanja" class="flex gap-4 mb-4 text-sm font-bold bg-zinc-900 text-zinc-100 p-4 rounded-md border border-zinc-800 shadow-inner overflow-x-auto"></div>
+        <div class="overflow-x-auto border border-zinc-200 rounded-md custom-scrollbar">
+          <table class="w-full text-left border-collapse text-sm min-w-[600px]">
+            <thead class="sticky top-0 z-10 bg-zinc-800"><tr class="text-[10px] uppercase text-zinc-300 font-extrabold tracking-wider"><th class="py-3 px-4">Waktu</th><th class="py-3 px-3">Supplier</th><th class="py-3 px-3">Nama Barang</th><th class="py-3 px-3 text-center">QTY</th><th class="py-3 px-3 text-right">Modal Satuan</th><th class="py-3 px-3 text-right">Total Keluar</th><th class="py-3 px-3 text-center">Aksi</th></tr></thead>
+            <tbody id="logBelanjaBody" class="divide-y divide-zinc-100 font-medium bg-white dark:bg-zinc-950"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: RIWAYAT PENJUALAN -->
+    <section id="sec-riwayat" class="hidden space-y-6 min-w-[700px]">
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 border-t-4 border-t-orange-500">
+        <div class="flex justify-between items-center mb-4">
+          <div><h3 class="font-extrabold text-lg uppercase tracking-wide"><i class="fa-solid fa-list-check text-orange-500 mr-2"></i> Log Transaksi</h3></div>
+          <div class="flex items-center gap-2">
+            <input type="date" id="filterTanggal" onchange="renderRiwayat()" class="bg-zinc-50 border border-zinc-300 text-zinc-800 px-3 py-2.5 rounded text-sm font-bold outline-none focus:border-red-500 uppercase">
+            <button onclick="resetRiwayatLunas()" class="bg-zinc-100 hover:bg-red-50 text-zinc-600 hover:text-red-600 border border-zinc-300 px-4 py-2.5 rounded text-xs font-bold transition uppercase tracking-wider cursor-pointer"><i class="fa-solid fa-trash-can mr-1"></i> Bersihkan Log</button>
+          </div>
+        </div>
+        <div id="summaryRiwayat" class="flex gap-4 mb-4 text-sm font-bold bg-zinc-900 text-zinc-100 p-4 rounded-md border border-zinc-800 shadow-inner overflow-x-auto"></div>
+        <div class="overflow-x-auto border border-zinc-200 rounded-md custom-scrollbar">
+          <table class="w-full text-left border-collapse text-sm min-w-[600px]">
+            <thead class="sticky top-0 z-10 bg-zinc-800"><tr class="text-[10px] uppercase text-zinc-300 font-extrabold tracking-wider"><th class="py-3 px-4">Status</th><th class="py-3 px-3">Waktu</th><th class="py-3 px-3">Pelanggan</th><th class="py-3 px-3">Item Transaksi</th><th class="py-3 px-3 text-center">QTY</th><th class="py-3 px-3 text-right">Nilai Tagihan</th><th class="py-3 px-3 text-center">Aksi</th></tr></thead>
+            <tbody id="logBody" class="divide-y divide-zinc-100 font-medium bg-white dark:bg-zinc-950"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: TUTUP BUKU -->
+    <section id="sec-rekap" class="hidden space-y-6 min-w-[700px]">
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 border-t-4 border-t-emerald-500">
+        <div class="flex justify-between items-center mb-6">
+          <div><h3 class="font-extrabold text-lg uppercase tracking-wide"><i class="fa-solid fa-book-bookmark text-emerald-600 mr-2"></i> Rekap Closing</h3></div>
+          <div class="flex items-center gap-2">
+            <input type="date" id="rekapTanggal" onchange="renderRekap()" class="bg-zinc-50 border border-zinc-300 text-zinc-800 px-3 py-2.5 rounded text-sm font-bold outline-none focus:border-emerald-500 uppercase">
+            <button onclick="cetakRekapHarian()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded text-xs font-bold transition flex items-center gap-2 shadow-md uppercase tracking-wider cursor-pointer"><i class="fa-solid fa-print"></i> Cetak</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-5 mb-6">
+          <div class="bg-zinc-50 p-5 rounded-md border border-zinc-200 border-l-4 border-l-emerald-500"><p class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Jual (Harga Grosir)</p><h3 id="rekapUangMasuk" class="text-2xl font-extrabold text-emerald-600 mt-1 tracking-tight">Rp 0</h3></div>
+          <div class="bg-zinc-50 p-5 rounded-md border border-zinc-200 border-l-4 border-l-orange-500"><p class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Piutang (Grosir)</p><h3 id="rekapPiutang" class="text-2xl font-extrabold text-orange-600 mt-1 tracking-tight">Rp 0</h3></div>
+          <div class="bg-zinc-900 p-5 rounded-md border border-zinc-800 border-l-4 border-l-red-500"><p class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Laba Bersih</p><h3 id="rekapLaba" class="text-2xl font-extrabold text-red-500 mt-1 tracking-tight">Rp 0</h3></div>
+        </div>
+        <div class="overflow-x-auto border border-zinc-200 rounded-md custom-scrollbar">
+          <table class="w-full text-left border-collapse text-sm min-w-[600px]">
+            <thead class="sticky top-0 z-10 bg-zinc-800"><tr class="text-[10px] uppercase text-zinc-300 font-extrabold tracking-wider"><th class="py-3 px-3">Jam</th><th class="py-3 px-3">Status</th><th class="py-3 px-3">Nama Barang</th><th class="py-3 px-3 text-center">QTY</th><th class="py-3 px-3 text-right">Harga Grosir</th><th class="py-3 px-3 text-right">Subtotal Grosir</th></tr></thead>
+            <tbody id="rekapBody" class="divide-y divide-zinc-100 font-medium bg-white dark:bg-zinc-950"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 8: STOCK OPNAME -->
+    <section id="sec-opname" class="hidden space-y-6 min-w-[700px]">
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-zinc-200 border-t-4 border-t-orange-500">
+        <div class="flex justify-between items-center mb-6">
+          <div><h3 class="font-extrabold text-lg uppercase tracking-wide"><i class="fa-solid fa-clipboard-check text-orange-500 mr-2"></i> Audit Opname</h3></div>
+          <div class="flex gap-2">
+            <button onclick="cetakFormOpname()" class="bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 text-zinc-700 px-4 py-2.5 rounded text-xs font-bold transition flex items-center justify-center gap-2 uppercase tracking-wider cursor-pointer"><i class="fa-solid fa-print"></i> Form Fisik</button>
+            <button onclick="terapkanOpname()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded text-xs font-bold transition flex items-center justify-center gap-2 shadow-md uppercase tracking-wider cursor-pointer"><i class="fa-solid fa-upload"></i> Sync Data</button>
+          </div>
+        </div>
+        <div class="flex justify-between items-center bg-zinc-50 p-4 rounded-md mb-4 border border-zinc-200">
+          <div class="relative w-80"><i class="fa-solid fa-search absolute left-4 top-3.5 text-zinc-400 text-sm"></i><input type="text" id="cariOpnameInput" oninput="renderOpnameDebounce()" placeholder="Filter rak / nama..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-zinc-300 rounded text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all font-medium"></div>
+          <div class="text-right"><p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Estimasi Rugi/Lebih</p><p id="totalSelisihOpname" class="text-2xl font-extrabold text-zinc-800 leading-none mt-1 tracking-tight">Rp 0</p></div>
+        </div>
+        <div class="overflow-x-auto max-h-[60vh] overflow-y-auto rounded-md border border-zinc-200 custom-scrollbar">
+          <table class="w-full text-left border-collapse text-sm relative min-w-[500px]">
+            <thead class="sticky top-0 z-10 bg-zinc-800"><tr class="text-[10px] uppercase text-zinc-300 font-extrabold tracking-wider"><th class="py-3 px-4">KODE & NAMA BARANG</th><th class="py-3 px-3 text-center">SISTEM</th><th class="py-3 px-3 text-center w-32 text-red-400">CEK FISIK</th><th class="py-3 px-4 text-right">SELISIH NILAI (Rp)</th></tr></thead>
+            <tbody id="opnameBody" class="divide-y divide-zinc-100 font-medium bg-white dark:bg-zinc-950"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- AREA PRINT -->
+<div id="print-area" class="hidden p-4 font-mono text-xs text-black max-w-xs mx-auto"></div>
+<div id="print-area-opname" class="hidden p-6 font-sans text-sm text-black w-full bg-white absolute top-0 left-0 min-h-screen"></div>
+
+<!-- MODAL PENGATURAN -->
+<div id="modalPengaturan" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-[110] p-4 no-print backdrop-blur-sm">
+  <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border-t-4 border-zinc-800">
+    <div class="flex justify-between items-center mb-4 border-b border-zinc-100 pb-3">
+      <h3 class="font-extrabold text-lg uppercase tracking-wide">Profil Toko</h3>
+      <button onclick="tutupModalPengaturan()" class="text-zinc-400 hover:text-red-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+    </div>
+    <div class="space-y-4 text-sm mt-4">
+      <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Nama Bengkel / Toko</label><input type="text" id="setNamaToko" class="w-full mt-1 p-3 bg-zinc-50 border border-zinc-300 rounded font-bold focus:border-red-500 outline-none"></div>
+      <div>
+        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Logo Toko</label>
+        <div class="flex items-center gap-3 mt-2">
+          <div class="w-14 h-14 bg-zinc-100 flex items-center justify-center border border-zinc-300 overflow-hidden shrink-0 rounded-md"><img id="previewSetFoto" src="" class="w-full h-full object-cover hidden"><i id="previewSetIcon" class="fa-solid fa-image text-zinc-400 text-xl"></i></div>
+          <input type="file" accept="image/*" onchange="uploadFotoProfil(event)" class="text-xs w-full text-zinc-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-wider file:bg-zinc-800 file:text-white hover:file:bg-zinc-900 cursor-pointer">
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-8"><button onclick="tutupModalPengaturan()" class="px-5 py-2.5 rounded border border-zinc-300 text-zinc-600 text-xs font-bold uppercase tracking-wider hover:bg-zinc-50 transition cursor-pointer">Batal</button><button onclick="simpanPengaturan()" class="px-6 py-2.5 rounded bg-zinc-900 text-white text-xs font-bold shadow-md uppercase tracking-wider hover:bg-black transition cursor-pointer">Simpan</button></div>
+  </div>
+</div>
+
+<!-- MODAL EDIT BARANG -->
+<div id="modalEditBarang" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4 no-print backdrop-blur-sm">
+  <div class="bg-white rounded-lg max-w-lg w-full p-6 shadow-2xl border-t-4 border-zinc-800">
+    <h3 class="font-extrabold text-lg mb-4 uppercase tracking-wide border-b border-zinc-100 pb-3">Edit Part</h3>
+    <input type="hidden" id="editIdx">
+    <div class="grid grid-cols-2 gap-4 text-sm mt-4 max-h-[60vh] overflow-y-auto px-2 custom-scrollbar">
+      <div class="col-span-2"><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">KODE PART</label><input type="text" id="editKode" class="w-full mt-1 p-3 bg-zinc-50 border border-zinc-300 rounded uppercase font-mono font-bold focus:border-red-500 outline-none transition-all"></div>
+      <div class="col-span-2"><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">NAMA BARANG</label><input type="text" id="editNama" class="w-full mt-1 p-3 bg-zinc-50 border border-zinc-300 rounded uppercase font-bold focus:border-red-500 outline-none transition-all"></div>
+      <div class="col-span-2"><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Kecocokan Motor</label><input type="text" id="editMotor" placeholder="Beat, Vario 110, Scoopy" class="w-full mt-1 p-3 bg-zinc-50 border border-zinc-300 rounded focus:border-red-500 outline-none transition-all"></div>
+      <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">MERK</label><input type="text" id="editMerk" class="w-full mt-1 p-3 bg-zinc-50 border border-zinc-300 rounded uppercase focus:border-red-500 outline-none transition-all"></div>
+      <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">LOKASI</label><select id="editTempat" class="w-full mt-1 p-3 bg-zinc-50 border border-zinc-300 rounded font-bold outline-none focus:border-red-500 transition-all"><option value="MUMU">MUMU</option><option value="IWAN">IWAN</option><option value="ONLINE">ONLINE</option></select></div>
+      <div class="col-span-2"><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">STOK SISTEM</label><input type="number" id="editStok" class="w-full mt-1 p-3 bg-zinc-100 border border-zinc-300 rounded font-extrabold text-lg outline-none focus:border-red-500 transition-all"></div>
+      <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">MODAL (Rp)</label><input type="number" id="editModal" class="w-full mt-1 p-3 bg-white border border-zinc-300 rounded font-bold outline-none focus:border-red-500 transition-all"></div>
+      <div></div>
+      <div><label class="text-[10px] font-bold text-red-600 uppercase tracking-wider">GROSIR (Rp)</label><input type="number" id="editJual" class="w-full mt-1 p-3 bg-red-50 border border-red-200 rounded font-bold text-red-700 outline-none focus:border-red-500 transition-all"></div>
+      <div><label class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">ECERAN (Rp)</label><input type="number" id="editBengkel" class="w-full mt-1 p-3 bg-emerald-50 border border-emerald-200 rounded font-bold text-emerald-700 outline-none focus:border-emerald-500 transition-all"></div>
+    </div>
+    <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-zinc-100"><button onclick="tutupModalBarang()" class="px-5 py-2.5 rounded border border-zinc-300 text-zinc-600 text-xs font-bold uppercase tracking-wider hover:bg-zinc-50 transition cursor-pointer">Batal</button><button onclick="simpanEditBarang()" class="px-6 py-2.5 rounded bg-zinc-900 text-white text-xs font-bold shadow-md uppercase tracking-wider hover:bg-black transition cursor-pointer">Simpan</button></div>
+  </div>
+</div>
+
+<!-- MODAL EDIT LOG JUAL -->
+<div id="modalEditLog" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4 no-print backdrop-blur-sm">
+  <div class="bg-white rounded-lg max-w-sm w-full p-6 shadow-2xl border-t-4 border-zinc-800">
+    <h3 class="font-extrabold text-lg mb-4 uppercase tracking-wide border-b border-zinc-100 pb-3">Edit Log Jual</h3>
+    <input type="hidden" id="editLogIdx">
+    <div class="space-y-4 text-sm mt-4">
+      <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Nama Pelanggan</label><input type="text" id="editLogPelanggan" class="w-full mt-1 p-3 bg-zinc-50 border border-zinc-300 rounded font-bold outline-none focus:border-red-500 transition-all"></div>
+      <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Nama Barang</label><input type="text" id="editLogNama" class="w-full mt-1 p-3 bg-zinc-50 border border-zinc-300 rounded font-bold outline-none focus:border-red-500 transition-all"></div>
+      <div><label class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Harga Satuan (Rp)</label><input type="number" id="editLogHarga" class="w-full mt-1 p-3 bg-zinc-50 border border-zinc-300 rounded font-bold outline-none focus:border-red-500 transition-all"></div>
+    </div>
+    <div class="flex justify-end gap-3 mt-8"><button onclick="tutupModalLog()" class="px-5 py-2.5 rounded border border-zinc-300 text-zinc-600 text-xs font-bold uppercase tracking-wider hover:bg-zinc-50 transition cursor-pointer">Batal</button><button onclick="simpanEditLog()" class="px-6 py-2.5 rounded bg-zinc-900 text-white text-xs font-bold shadow-md uppercase tracking-wider hover:bg-black transition cursor-pointer">Simpan</button></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
